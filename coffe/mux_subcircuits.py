@@ -65,7 +65,7 @@ def _generate_ptran_2lvl_mux_partial(spice_file, mux_name, implemented_mux_size,
 	spice_file.write("Xptran_" + mux_name + "_L2 " + current_node + " n_gnd n_gnd n_gnd ptran Wn=ptran_" + mux_name + "_L2_nmos\n")
 	spice_file.write(".ENDS\n\n\n") 
 
-
+#shen: fatal bug! 
 def _generate_ptran_2lvl_mux_on(spice_file, mux_name, implemented_mux_size, level1_size, level2_size):
 	""" Generate on pass-transistor 2-level mux, never call this outside this file """
 
@@ -95,55 +95,63 @@ def _generate_ptran_2lvl_mux_on(spice_file, mux_name, implemented_mux_size, leve
 	wire_counter = 1
 	tran_counter = 1
 	# These are the switches below driver connection
-	for i in range(1, (level2_size/2)):
-		new_node = "n_2_" + str(i)
-		spice_file.write("Xwire_" + mux_name + "_L2_" + str(wire_counter) + " " + current_node + " " + new_node + 
-							" wire Rw='wire_" + mux_name + "_L2_res/" + str(level2_size-1) + "' Cw='wire_" +
-							mux_name + "_L2_cap/" + str(level2_size-1) + "'\n")
-		spice_file.write("Xptran_" + mux_name + "_L2_" + str(tran_counter) + "h n_gnd " + new_node + " n_gnd n_gnd ptran Wn=ptran_" + mux_name + "_L2_nmos\n")
-		wire_counter = wire_counter + 1
-		tran_counter = tran_counter + 1
-		current_node = new_node
-	# These are the middle wires
-	# If level size is odd, we put a full size wire, if even, wire is only half size (wire is in middle of two switches) 
-	if level2_size%2==0:
-		spice_file.write("Xwire_" + mux_name + "_L2_" + str(wire_counter) + " " + current_node + " n_out" + 
-							" wire Rw='wire_" + mux_name + "_L2_res/" + str(2*(level2_size-1)) + "' Cw='wire_" +
-							mux_name + "_L2_cap/" + str(2*(level2_size-1)) + "'\n")
-		wire_counter = wire_counter + 1
-		new_node = "n_2_" + str(level2_size/2)
-		spice_file.write("Xwire_" + mux_name + "_L2_" + str(wire_counter) + " " + " n_out " + new_node + 
-							" wire Rw='wire_" + mux_name + "_L2_res/" + str(2*(level2_size-1)) + "' Cw='wire_" +
-							mux_name + "_L2_cap/" + str(2*(level2_size-1)) + "'\n")
-		spice_file.write("Xptran_" + mux_name + "_L2_" + str(tran_counter) + "h n_gnd " + new_node + " n_gnd n_gnd ptran Wn=ptran_" + mux_name + "_L2_nmos\n")
-		wire_counter = wire_counter + 1
-		tran_counter = tran_counter + 1
-		current_node = new_node
-	else:
-		spice_file.write("Xwire_" + mux_name + "_L2_" + str(wire_counter) + " " + current_node + " n_out" + 
-							" wire Rw='wire_" + mux_name + "_L2_res/" + str(level2_size-1) + "' Cw='wire_" +
-							mux_name + "_L2_cap/" + str(level2_size-1) + "'\n")
-		spice_file.write("Xptran_" + mux_name + "_L2_" + str(tran_counter) + "h n_gnd n_out n_gnd n_gnd ptran Wn=ptran_" + mux_name + "_L2_nmos\n")
-		wire_counter = wire_counter + 1
-		tran_counter = tran_counter + 1
-		new_node = "n_2_" + str(level2_size/2)
-		spice_file.write("Xwire_" + mux_name + "_L2_" + str(wire_counter) + " " + " n_out " + new_node + 
-							" wire Rw='wire_" + mux_name + "_L2_res/" + str(level2_size-1) + "' Cw='wire_" +
-							mux_name + "_L2_cap/" + str(level2_size-1) + "'\n")
-		spice_file.write("Xptran_" + mux_name + "_L2_" + str(tran_counter) + "h n_gnd " + new_node + " n_gnd n_gnd ptran Wn=ptran_" + mux_name + "_L2_nmos\n")
-		wire_counter = wire_counter + 1
-		tran_counter = tran_counter + 1
-		current_node = new_node
-	# These are the switches above driver connection
-	for i in range(1, (level2_size/2)):
-		new_node = "n_2_" + str(i+level2_size/2)
-		spice_file.write("Xwire_" + mux_name + "_L2_" + str(wire_counter) + " " + current_node + " " + new_node + 
-							" wire Rw='wire_" + mux_name + "_L2_res/" + str(level2_size-1) + "' Cw='wire_" +
-							mux_name + "_L2_cap/" + str(level2_size-1) + "'\n")
-		spice_file.write("Xptran_" + mux_name + "_L2_" + str(tran_counter) + "h n_gnd " + new_node + " n_gnd n_gnd ptran Wn=ptran_" + mux_name + "_L2_nmos\n")
-		wire_counter = wire_counter + 1
-		tran_counter = tran_counter + 1
-		current_node = new_node  
+	#shen: the following code doesn't cover the condition when level2_size = 1!!!!!!!!!!
+	#there are 2 solutions:
+	#1: assure level2_size cant be 1, this need modify the algriothm of generating level1_size and level2_size
+	#2: add a new if-condition branch when level2_size = 1
+	if level2_size == 1 : 
+		spice_file.write("Xwire_" + mux_name + "_L2_1" + " " + current_node + " " + "n_out"
+						 + " wire Rw='wire_" + mux_name + "_L2_res" + "' Cw='wire_" + mux_name + "_L2_cap" + "'\n")
+	else :
+		for i in range(1, (level2_size/2)):
+			new_node = "n_2_" + str(i)
+			spice_file.write("Xwire_" + mux_name + "_L2_" + str(wire_counter) + " " + current_node + " " + new_node + 
+								" wire Rw='wire_" + mux_name + "_L2_res/" + str(level2_size-1) + "' Cw='wire_" +
+								mux_name + "_L2_cap/" + str(level2_size-1) + "'\n")
+			spice_file.write("Xptran_" + mux_name + "_L2_" + str(tran_counter) + "h n_gnd " + new_node + " n_gnd n_gnd ptran Wn=ptran_" + mux_name + "_L2_nmos\n")
+			wire_counter = wire_counter + 1
+			tran_counter = tran_counter + 1
+			current_node = new_node
+		# These are the middle wires
+		# If level size is odd, we put a full size wire, if even, wire is only half size (wire is in middle of two switches) 
+		if level2_size%2==0:
+			spice_file.write("Xwire_" + mux_name + "_L2_" + str(wire_counter) + " " + current_node + " n_out" + 
+								" wire Rw='wire_" + mux_name + "_L2_res/" + str(2*(level2_size-1)) + "' Cw='wire_" +
+								mux_name + "_L2_cap/" + str(2*(level2_size-1)) + "'\n")
+			wire_counter = wire_counter + 1
+			new_node = "n_2_" + str(level2_size/2)
+			spice_file.write("Xwire_" + mux_name + "_L2_" + str(wire_counter) + " " + " n_out " + new_node + 
+								" wire Rw='wire_" + mux_name + "_L2_res/" + str(2*(level2_size-1)) + "' Cw='wire_" +
+								mux_name + "_L2_cap/" + str(2*(level2_size-1)) + "'\n")
+			spice_file.write("Xptran_" + mux_name + "_L2_" + str(tran_counter) + "h n_gnd " + new_node + " n_gnd n_gnd ptran Wn=ptran_" + mux_name + "_L2_nmos\n")
+			wire_counter = wire_counter + 1
+			tran_counter = tran_counter + 1
+			current_node = new_node
+		else:
+			spice_file.write("Xwire_" + mux_name + "_L2_" + str(wire_counter) + " " + current_node + " n_out" + 
+								" wire Rw='wire_" + mux_name + "_L2_res/" + str(level2_size-1) + "' Cw='wire_" +
+								mux_name + "_L2_cap/" + str(level2_size-1) + "'\n")
+			spice_file.write("Xptran_" + mux_name + "_L2_" + str(tran_counter) + "h n_gnd n_out n_gnd n_gnd ptran Wn=ptran_" + mux_name + "_L2_nmos\n")
+			wire_counter = wire_counter + 1
+			tran_counter = tran_counter + 1
+			new_node = "n_2_" + str(level2_size/2)
+			spice_file.write("Xwire_" + mux_name + "_L2_" + str(wire_counter) + " " + " n_out " + new_node + 
+								" wire Rw='wire_" + mux_name + "_L2_res/" + str(level2_size-1) + "' Cw='wire_" +
+								mux_name + "_L2_cap/" + str(level2_size-1) + "'\n")
+			spice_file.write("Xptran_" + mux_name + "_L2_" + str(tran_counter) + "h n_gnd " + new_node + " n_gnd n_gnd ptran Wn=ptran_" + mux_name + "_L2_nmos\n")
+			wire_counter = wire_counter + 1
+			tran_counter = tran_counter + 1
+			current_node = new_node
+		# These are the switches above driver connection
+		for i in range(1, (level2_size/2)):
+			new_node = "n_2_" + str(i+level2_size/2)
+			spice_file.write("Xwire_" + mux_name + "_L2_" + str(wire_counter) + " " + current_node + " " + new_node + 
+								" wire Rw='wire_" + mux_name + "_L2_res/" + str(level2_size-1) + "' Cw='wire_" +
+								mux_name + "_L2_cap/" + str(level2_size-1) + "'\n")
+			spice_file.write("Xptran_" + mux_name + "_L2_" + str(tran_counter) + "h n_gnd " + new_node + " n_gnd n_gnd ptran Wn=ptran_" + mux_name + "_L2_nmos\n")
+			wire_counter = wire_counter + 1
+			tran_counter = tran_counter + 1
+			current_node = new_node  
 	spice_file.write(".ENDS\n\n\n")
 
 
